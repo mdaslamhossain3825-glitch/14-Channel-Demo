@@ -27,7 +27,7 @@
 int sensorADC[sensorNumber];
 int sensorDigital[sensorNumber];
 int bitWeight[sensorNumber] = {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192};
-int WeightValue[sensorNumber] = {10,20,30,40,50,60,70,80,90,100,110,120};
+int WeightValue[sensorNumber] = {10,20,30,40,50,60,70,80,90,100,110,120,130,140};
 int sumOnSensor;
 int sensorWight;
 int bitSensor;
@@ -43,7 +43,7 @@ float derivative;
 int base_speed = 150;
 int kp = 8;
 int kd = 100;
-float center_position = 45;
+float center_position = 75;
 // ---------------------- LEDC CONFIG ---------------------------
 #define LEDC_FREQ 20000
 #define LEDC_RES  8
