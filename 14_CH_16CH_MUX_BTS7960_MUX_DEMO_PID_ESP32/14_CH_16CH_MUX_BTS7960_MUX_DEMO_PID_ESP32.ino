@@ -1,10 +1,10 @@
 #include <EEPROM.h>
 // ----------------------- PIN DEFINITIONS -----------------------
 // MOTOR pins for BTS7960 (PWM controlled)
-#define left_motor_forward   16     // LPWM
-#define left_motor_backward  17     // RPWM
-#define right_motor_forward  2    // LPWM
-#define right_motor_backward 4    // RPWM
+#define left_motor_forward 16   // LPWM
+#define left_motor_backward 17  // RPWM
+#define right_motor_forward 2   // LPWM
+#define right_motor_backward 4  // RPWM
 // MUX pins for sensor selection
 #define S0 25
 #define S1 26
@@ -12,10 +12,10 @@
 #define S3 33
 #define SIG_PIN 35
 // Buttons
-#define button1 5
-#define button2 18
-#define button3 23
-#define button4 3
+#define button1 18
+#define button2 5
+#define button3 3
+#define button4 23
 //others
 #define buzzer 15
 #define tr_sensor 19
@@ -26,8 +26,8 @@
 #define sensorNumber 14
 int sensorADC[sensorNumber];
 int sensorDigital[sensorNumber];
-int bitWeight[sensorNumber] = {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192};
-int WeightValue[sensorNumber] = {10,20,30,40,50,60,70,80,90,100,110,120,130,140};
+int bitWeight[sensorNumber] = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
+int WeightValue[sensorNumber] = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140 };
 int sumOnSensor;
 int sensorWight;
 int bitSensor;
@@ -46,7 +46,7 @@ int kd = 100;
 float center_position = 75;
 // ---------------------- LEDC CONFIG ---------------------------
 #define LEDC_FREQ 20000
-#define LEDC_RES  8
+#define LEDC_RES 8
 // LEDC channels
 #define CH_LF 0
 #define CH_LB 1
@@ -76,7 +76,7 @@ void setup() {
   ledcSetup(CH_RF, LEDC_FREQ, LEDC_RES);
   ledcSetup(CH_RB, LEDC_FREQ, LEDC_RES);
   // Attach PWM channels
-  ledcAttachPin(left_motor_forward,  CH_LF);
+  ledcAttachPin(left_motor_forward, CH_LF);
   ledcAttachPin(left_motor_backward, CH_LB);
   ledcAttachPin(right_motor_forward, CH_RF);
   ledcAttachPin(right_motor_backward, CH_RB);
@@ -85,8 +85,15 @@ void setup() {
 
 // ========================= MAIN LOOP ===========================
 void loop() {
-  if (!digitalRead(button1)) calibrateSensor();
-  if (!digitalRead(button2)) PID_Controller(base_speed, kp, kd);
+  //if (!digitalRead(button1)) Serial.println("Button 1 Pressed");
+  //if (!digitalRead(button2)) Serial.println("Button 2 Pressed");
+  //if (!digitalRead(button3)) Serial.println("Button 3 Pressed");
+  //if (!digitalRead(button4)) Serial.println("Button 4 Pressed");
+
+
+  if (!digitalRead(button1)) calibrateSensor(); //calibrate sensor on the line
+  if (!digitalRead(button2)) PID_Controller(base_speed, kp, kd); //start line follow
+  if (!digitalRead(button3)) analogValue(); //show sensor's analog value in serial monitor
 }
 
 // ========================= MOTOR CONTROL =======================
@@ -120,17 +127,17 @@ void motor(int LPWM, int RPWM) {
 // ========================= PID CONTROLLER ======================
 void PID_Controller(int base_speed, int p, int d) {
   while (1) {
-  a:
+a:
     read_black_line();
     if (sumOnSensor > 0) line_position = sensorWight / sumOnSensor;
     error = center_position - line_position;
     derivative = error - previous_error;
     int right_motor_value = base_speed + (error * p + derivative * d);
-    int left_motor_value  = base_speed - (error * p + derivative * d);
+    int left_motor_value = base_speed - (error * p + derivative * d);
     previous_error = error;
     motor(left_motor_value, right_motor_value);
     //inverse line detection
-    if (sensorDigital[3]==1 && sensorDigital[10]==1 && bitSensor<16384) {
+    if (sensorDigital[3] == 1 && sensorDigital[10] == 1 && bitSensor < 16384) {
       inverseON = !inverseON;
       digitalWrite(led, inverseON);
       goto a;
@@ -143,13 +150,13 @@ void calibrateSensor() {
   // Set initial Min–Max limits
   for (int i = 0; i < sensorNumber; i++) {
     Max_ADC[i] = 0;
-    Min_ADC[i] = 4095; // ESP32 ADC max
+    Min_ADC[i] = 4095;  // ESP32 ADC max
   }
   int rotationDirections[][2] = {
-    {-1, 1},
-    {1, -1},
-    {1, -1},
-    {-1, 1}
+    { -1, 1 },
+    { 1, -1 },
+    { 1, -1 },
+    { -1, 1 }
   };
   for (int step = 0; step < 4; step++) {
     motor(base_speed * 0.4 * rotationDirections[step][0],
@@ -233,3 +240,14 @@ void Bit_Sensor_Show() {
   }
 }
 
+void analogValue() {
+  while (1) {
+    for (int i = 0; i < sensorNumber; i++) {
+      selectChannel(i);
+      delayMicroseconds(20);
+      sensorADC[i] = analogRead(SIG_PIN);
+      Serial.print(String(sensorADC[i]) + "  ");
+    }
+    Serial.println();
+  }
+}
